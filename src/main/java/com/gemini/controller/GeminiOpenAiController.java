@@ -33,7 +33,7 @@ public class GeminiOpenAiController {
         try {
             return geminiChatService.explainImage(file);
         } catch (IOException e) {
-            return "이미지 설명중 오류 발생: " + e.getMessage();
+            return "이미지 설명 중 오류 발생: " + e.getMessage();
         }
     }
 
@@ -45,7 +45,19 @@ public class GeminiOpenAiController {
         try {
             return geminiChatService.analyzeAudio(file);
         } catch (IOException e) {
-            return "오디오 설명중 오류 발생: " + e.getMessage();
+            return "오디오 설명 중 오류 발생: " + e.getMessage();
+        }
+    }
+
+    /**
+     * Gemini에게 동영상 설명 요청 및 응답
+     */
+    @GetMapping("/video/explain")
+    public String explainVideo(MultipartFile file) {
+        try {
+            return geminiChatService.analyzeVideo(file);
+        } catch (IOException e) {
+            return "동영상 설명 중 오루 발생: " + e.getMessage();
         }
     }
 }

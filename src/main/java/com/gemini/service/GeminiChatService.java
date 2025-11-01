@@ -173,4 +173,71 @@ public class GeminiChatService {
         return resultText;
     }
 
+    /**
+     * 동영상 파일 분석
+     * @param file 업로드된 동영상 파일 (MultipartFile)
+     * @return 모델이 분석한 동영상의 설명 텍스트
+     */
+    public String analyzeVideo(MultipartFile file) throws IOException {
+        // MultipartFile을 바이트 배열로 변환
+        byte[] videoBytes = file.getBytes();
+        // 바이트 배열을 ByteArrayResource로 감싸 Media 객체 생성 준비
+        ByteArrayResource videoResource = new ByteArrayResource(videoBytes);
+
+        MediaType mediaType;
+        try {
+            // 파일의 Content-Type을 파싱하여 MediaType 설정
+            mediaType = MediaType.parseMediaType(file.getContentType());
+        } catch (Exception e) {
+            // Content-Type이 없거나 파싱 실패 시 기본값으로 설정
+            mediaType = MediaType.APPLICATION_OCTET_STREAM;
+        }
+        // Media 객체 생성: 이미지 데이터 + MIME 타입 지정
+        Media videoMedia = Media.builder()
+                            .mimeType(mediaType)
+                            .data(videoResource)
+                            .build();
+        // UserMessage 생성: 모델에게 전달할 사용자 메시지 + 동영상 포함
+        UserMessage userMessage = UserMessage.builder()
+                .text("이 동영상을 분석하고 내용을 설명해 주세요.")
+                .media(videoMedia)
+                .build();
+        // 메시지 리스트 구성: 시스템 메시지 + 사용자 메시지
+        List<Message> messages = List.of(
+                new SystemMessage("당신은 동영상 분석가 입니다."),
+                userMessage
+        );
+        // ChatOptions 생성: 모델 옵션 설정
+        ChatOptions options = ChatOptions.builder()
+                .model("gemini-2.5-flash")
+                .temperature(0.5)
+                .maxTokens(2000)
+                .build();
+        // Prompt 객체 생성: 메시지와 옵션을 합쳐서 모델 호출 준비
+        Prompt prompt = new Prompt(messages, options);
+        // OpenAiChatModel 생성: Gemini API와 연동
+        OpenAiChatModel chatModel = OpenAiChatModel.builder()
+                .openAiApi(geminiApi)
+                .build();
+        // 모델 호출: 이미지와 프롬프트를 전달하고 응답 받기
+        ChatResponse response = chatModel.call(prompt);
+        System.out.println(response);
+        // 모델의 응답에서 AssistantMessage 추출
+        AssistantMessage assistantMessage = response.getResult().getOutput();
+
+        // 모델의 텍스트 출력이 존재하는지 확인 후 결과에 저장
+        String resultText = "";
+        if (assistantMessage != null && assistantMessage.getText() != null && !assistantMessage.getText().isEmpty()) {
+            resultText = assistantMessage.getText();
+        } else {
+            // 모델이 텍스트 응답을 반환하지 않은 경우
+            resultText = "모델에서 출력된 텍스트가 없습니다.";
+        }
+        // 예외 상황: 최종 결과가 비어있는 경우 추가 메시지 처리
+        if (resultText.isEmpty()) {
+            resultText = "모델에서 동영상 분석 결과가 없습니다.";
+        }
+
+        return resultText;
+    }
 }
