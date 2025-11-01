@@ -36,4 +36,16 @@ public class GeminiOpenAiController {
             return "이미지 설명중 오류 발생: " + e.getMessage();
         }
     }
+
+    /**
+     * Gemini에게 오디오 설명 요청 및 응답
+     */
+    @GetMapping("/wav/explain")
+    public String explainWav(MultipartFile file) {
+        try {
+            return geminiChatService.analyzeAudio(file);
+        } catch (IOException e) {
+            return "오디오 설명중 오류 발생: " + e.getMessage();
+        }
+    }
 }
